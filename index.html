@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>قائمة إغلاق اليوم</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E4EAF1; --sheet:#FFFFFF; --ink:#18212E; --muted:#5D6878; --line:#D3DAE3;
+  --marker:#1E4FD8; --marker-soft:#E8EEFD; --ok:#1E7A4C; --ok-soft:#E3F3EA; --warn:#9A5B00; --warn-soft:#FFF2DC;
+  --danger:#B42318; --field:#F5F7FA;
+  --font:"IBM Plex Sans Arabic", "Segoe UI", Tahoma, Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121821; --sheet:#1B2330; --ink:#E9EEF5; --muted:#9AA6B6; --line:#2D3848;
+    --marker:#7EA2FF; --marker-soft:#22304D; --ok:#5CCB92; --ok-soft:#1C3328; --warn:#F3B65B; --warn-soft:#3A2D17;
+    --danger:#FF8A80; --field:#232D3C;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121821; --sheet:#1B2330; --ink:#E9EEF5; --muted:#9AA6B6; --line:#2D3848;
+  --marker:#7EA2FF; --marker-soft:#22304D; --ok:#5CCB92; --ok-soft:#1C3328; --warn:#F3B65B; --warn-soft:#3A2D17;
+  --danger:#FF8A80; --field:#232D3C;
+}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--marker);outline-offset:2px;border-radius:6px}
+
+.wrap{max-width:760px;margin:0 auto;padding:16px 14px 120px}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.brand{font-weight:700;font-size:15px;color:var(--muted)}
+.switch{display:flex;background:var(--sheet);border:1px solid var(--line);border-radius:999px;padding:3px}
+.switch button{border:0;background:transparent;padding:6px 16px;border-radius:999px;font-weight:600;font-size:14px;color:var(--muted)}
+.switch button[aria-pressed="true"]{background:var(--ink);color:var(--sheet)}
+
+.sheet{background:var(--sheet);border:1px solid var(--line);border-radius:14px;padding:22px 18px;box-shadow:0 1px 0 var(--line)}
+.title-box{border:2px solid var(--ink);display:inline-block;padding:4px 22px;font-size:26px;font-weight:700;margin:0 0 6px}
+.head{text-align:center;margin-bottom:18px}
+.date{color:var(--muted);font-size:15px}
+
+.who{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--field);border-radius:10px;padding:10px 12px;margin-bottom:18px}
+.who label{font-weight:600;font-size:15px}
+.who input{flex:1;min-width:160px;border:1px solid var(--line);background:var(--sheet);border-radius:8px;padding:8px 10px}
+
+.section-title{font-size:18px;font-weight:700;margin:22px 0 8px;display:flex;justify-content:space-between;align-items:baseline}
+.section-title small{font-weight:500;color:var(--muted);font-size:14px}
+.list{border:1.5px solid var(--ink);border-radius:4px;overflow:hidden}
+.row{display:flex;align-items:stretch;border-top:1px solid var(--line);min-height:60px}
+.row:first-child{border-top:0}
+.row .txt{flex:1;padding:12px 14px;font-weight:500;align-self:center}
+.row .meta{display:block;font-size:13px;color:var(--muted);font-weight:400;margin-top:2px}
+.tick{width:84px;flex:none;border:0;border-inline-start:1.5px solid var(--ink);background:transparent;display:flex;align-items:center;justify-content:center;padding:0}
+.tick:disabled{cursor:default}
+.tick svg{width:52px;height:40px;overflow:visible}
+.tick path{fill:none;stroke:var(--marker);stroke-width:7;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:90;stroke-dashoffset:90;transition:stroke-dashoffset .28s ease-out}
+.tick .box{width:30px;height:30px;border:2px dashed var(--line);border-radius:6px;position:absolute}
+.tick{position:relative}
+.row.done .tick path{stroke-dashoffset:0}
+.row.done .tick .box{display:none}
+.row.done{background:var(--marker-soft)}
+@media (prefers-reduced-motion: reduce){.tick path{transition:none}}
+
+.bar{position:fixed;inset-inline:0;bottom:0;background:var(--sheet);border-top:1px solid var(--line);padding:12px 14px calc(12px + env(safe-area-inset-bottom,0px))}
+.bar-in{max-width:760px;margin:0 auto;display:flex;align-items:center;gap:14px}
+.prog{flex:1}
+.prog-num{font-weight:700;font-size:15px}
+.track{height:8px;background:var(--field);border-radius:99px;overflow:hidden;margin-top:4px}
+.fill{height:100%;background:var(--marker);width:0;transition:width .3s}
+.btn{border:0;border-radius:10px;padding:11px 18px;font-weight:700;background:var(--ink);color:var(--sheet)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--ink);font-weight:600}
+.btn.small{padding:7px 12px;font-size:14px}
+.btn.danger{background:transparent;color:var(--danger);border:1px solid var(--line)}
+
+.notice{border-radius:10px;padding:12px 14px;margin:0 0 16px;font-size:15px}
+.notice.ok{background:var(--ok-soft);color:var(--ok);font-weight:600}
+.notice.warn{background:var(--warn-soft);color:var(--warn)}
+.empty{text-align:center;color:var(--muted);padding:40px 10px}
+
+/* admin */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:18px;overflow-x:auto}
+.tabs button{border:0;background:transparent;padding:10px 14px;font-weight:600;color:var(--muted);border-bottom:3px solid transparent;white-space:nowrap}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--marker)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:18px}
+.stat{background:var(--field);border-radius:10px;padding:12px 14px}
+.stat b{display:block;font-size:22px}
+.stat span{font-size:14px;color:var(--muted)}
+.stat.good{background:var(--ok-soft)} .stat.good b{color:var(--ok)}
+.atable{width:100%;border-collapse:collapse;font-size:15px}
+.atable th{text-align:start;font-size:13px;color:var(--muted);font-weight:600;padding:8px;border-bottom:1px solid var(--line)}
+.atable td{padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+.atable tr.miss td:first-child{color:var(--danger)}
+.scroll{overflow-x:auto}
+.pill{display:inline-block;font-size:13px;padding:1px 10px;border-radius:99px;background:var(--field);color:var(--muted);white-space:nowrap}
+.pill.ok{background:var(--ok-soft);color:var(--ok)} .pill.no{background:var(--warn-soft);color:var(--warn)}
+.hist{display:flex;flex-direction:column;gap:8px}
+.hist button{display:flex;justify-content:space-between;align-items:center;gap:10px;text-align:start;background:var(--field);border:1px solid transparent;border-radius:10px;padding:12px 14px}
+.hist button:hover{border-color:var(--line)}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.edit-row{display:flex;gap:6px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.edit-row input[type=text]{flex:1;min-width:0;border:1px solid var(--line);background:var(--field);border-radius:8px;padding:8px 10px}
+.edit-row select,.add select{border:1px solid var(--line);background:var(--field);border-radius:8px;padding:8px}
+.icon{border:1px solid var(--line);background:var(--sheet);border-radius:8px;width:36px;height:36px;flex:none;font-size:15px;line-height:1}
+.icon.del{color:var(--danger)}
+.add{display:flex;gap:6px;flex-wrap:wrap;margin-top:14px}
+.add input{flex:1;min-width:180px;border:1px solid var(--line);background:var(--field);border-radius:8px;padding:9px 10px}
+.save-line{position:sticky;bottom:0;background:var(--sheet);padding:12px 0 4px;display:flex;gap:8px;align-items:center}
+.modal{position:fixed;inset:0;background:rgba(10,15,25,.55);display:flex;align-items:center;justify-content:center;padding:20px;z-index:50}
+.modal-box{background:var(--sheet);border-radius:14px;padding:22px 20px;width:100%;max-width:340px;text-align:center}
+.modal-box h2{margin:0 0 4px;font-size:20px}
+.modal-box p{margin:0 0 14px;color:var(--muted);font-size:14px}
+.pin-input{width:100%;text-align:center;font-size:28px;letter-spacing:12px;border:1.5px solid var(--line);background:var(--field);border-radius:10px;padding:10px;direction:ltr}
+.pin-err{color:var(--danger);font-size:14px;min-height:22px;margin:6px 0}
+.modal-actions{display:flex;gap:8px;justify-content:center}
+.card{background:var(--field);border-radius:10px;padding:14px;margin-bottom:14px}
+.card h3{margin:0 0 8px;font-size:16px}
+.card input{border:1px solid var(--line);background:var(--sheet);border-radius:8px;padding:8px 10px;width:150px;direction:ltr;text-align:center;letter-spacing:4px}
+.saved{color:var(--ok);font-size:14px;font-weight:600}
+.hidden{display:none !important}
+@media (max-width:520px){
+  .title-box{font-size:22px}
+  .tick{width:68px}
+  .edit-row{flex-wrap:wrap}
+  .edit-row input[type=text]{flex-basis:100%}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">تي بلس · الفرع</div>
+    <div class="switch" id="modeSwitch" role="group" aria-label="اختيار الصفحة">
+      <button id="btnWorker" aria-pressed="true">العامل</button>
+      <button id="btnAdmin" aria-pressed="false">🔒 المدير</button>
+    </div>
+  </div>
+
+  <div id="status" class="notice warn hidden"></div>
+
+  <!-- WORKER -->
+  <main id="workerView" class="sheet">
+    <div class="head">
+      <h1 class="title-box">قائمة إغلاق اليوم</h1>
+      <div class="date" id="wDate"></div>
+    </div>
+    <div id="wFinished" class="notice ok hidden"></div>
+    <div class="who" id="whoBox">
+      <label for="workerName">اسم العامل</label>
+      <input id="workerName" type="text" placeholder="اكتب اسمك قبل البدء" autocomplete="name">
+    </div>
+    <div id="wLists"></div>
+  </main>
+
+  <!-- ADMIN -->
+  <main id="adminView" class="sheet hidden">
+    <div class="tabs" role="tablist">
+      <button role="tab" aria-selected="true" data-tab="today">متابعة اليوم</button>
+      <button role="tab" aria-selected="false" data-tab="history">السجل</button>
+      <button role="tab" aria-selected="false" data-tab="tasks">تعديل المهام</button>
+      <button role="tab" aria-selected="false" data-tab="settings">الرقم السري</button>
+    </div>
+    <section id="tab-today"></section>
+    <section id="tab-history" class="hidden"></section>
+    <section id="tab-tasks" class="hidden"></section>
+    <section id="tab-settings" class="hidden"></section>
+  </main>
+</div>
+
+<div class="modal hidden" id="pinModal" role="dialog" aria-modal="true" aria-labelledby="pinTitle">
+  <div class="modal-box">
+    <h2 id="pinTitle">دخول المدير</h2>
+    <p id="pinHint">أدخل الرقم السري</p>
+    <input class="pin-input" id="pinInput" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" autocomplete="off" aria-label="الرقم السري">
+    <div class="pin-err" id="pinErr"></div>
+    <div class="modal-actions">
+      <button class="btn" id="pinOk">دخول</button>
+      <button class="btn ghost" id="pinCancel">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<div class="bar" id="wBar">
+  <div class="bar-in">
+    <div class="prog">
+      <div class="prog-num" id="wProgText">0 من 0</div>
+      <div class="track"><div class="fill" id="wFill"></div></div>
+    </div>
+    <button class="btn" id="finishBtn" disabled>إنهاء الإغلاق</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  const SECTIONS = { clean: "مهام التنظيف", close: "مهام الإغلاق" };
+  const DAY_START_HOUR = 5; // ما قبل الخامسة صباحاً يُحسب على يوم العمل السابق
+  const $ = (id) => document.getElementById(id);
+  const pad = (n) => String(n).padStart(2, "0");
+
+  let db = null, user = null, canWrite = true, isAdmin = false;
+  let tasks = [];          // [{id,text,section}]
+  let day = null;          // today's record
+  let dayKey = businessDate();
+  let unsubDay = null, unsubHist = null, unsubSelected = null;
+  let history = [];
+  let selectedDay = null, selectedRec = null;
+  let draft = null;        // admin edit copy of tasks
+  let writeChain = Promise.resolve();
+  let mode = "worker";
+  let pinCfg = null;      // {salt, hash}
+  let unlocked = false;
+  try { unlocked = sessionStorage.getItem("tp_admin_ok") === "1"; } catch(e){}
+
+  function businessDate(d = new Date()){
+    const x = new Date(d);
+    if (x.getHours() < DAY_START_HOUR) x.setDate(x.getDate() - 1);
+    return `${x.getFullYear()}-${pad(x.getMonth()+1)}-${pad(x.getDate())}`;
+  }
+  function prettyDate(key){
+    const [y,m,d] = key.split("-").map(Number);
+    return new Date(y, m-1, d).toLocaleDateString("ar-u-nu-latn", { weekday:"long", day:"numeric", month:"long", year:"numeric" });
+  }
+  function hm(iso){
+    if (!iso) return "";
+    const d = new Date(iso);
+    return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+  function esc(s){ const t = document.createElement("span"); t.textContent = s ?? ""; return t.innerHTML; }
+  function showStatus(msg, kind="warn"){
+    const el = $("status"); el.textContent = msg; el.className = "notice " + kind; el.classList.toggle("hidden", !msg);
+  }
+  function queue(fn){
+    writeChain = writeChain.then(fn).catch(e => {
+      console.error(e);
+      if (e && e.code === "invalid_argument"){ canWrite = false; renderWorker(); showStatus("لا توجد لديك صلاحية للتسجيل في هذه الصفحة. اطلب من المدير مشاركتها معك بصلاحية مساهم (Contributor)."); }
+      else showStatus("لم يُحفظ التغيير. تحقّق من الاتصال وحاول مرة أخرى.");
+    });
+    return writeChain;
+  }
+
+  /* ---------- name ---------- */
+  try { $("workerName").value = localStorage.getItem("tp_worker_name") || ""; } catch(e){}
+  $("workerName").addEventListener("input", () => {
+    try { localStorage.setItem("tp_worker_name", $("workerName").value.trim()); } catch(e){}
+    renderWorker();
+  });
+  const workerName = () => $("workerName").value.trim();
+
+  /* ---------- helpers on records ---------- */
+  function checksOf(rec){ return (rec && rec.checks) || {}; }
+  function countDone(rec){
+    const c = checksOf(rec);
+    return tasks.filter(t => c[t.id] && c[t.id].done).length;
+  }
+  function lastCheckTime(rec){
+    const c = checksOf(rec); let last = null;
+    tasks.forEach(t => { const e = c[t.id]; if (e && e.done && e.at && (!last || e.at > last)) last = e.at; });
+    return last;
+  }
+  function workersOf(rec){
+    const c = checksOf(rec); const s = new Set();
+    Object.values(c).forEach(e => { if (e && e.done && e.by) s.add(e.by); });
+    if (rec && rec.finishedBy) s.add(rec.finishedBy);
+    return [...s];
+  }
+
+  /* ---------- WORKER ---------- */
+  function renderWorker(){
+    $("wDate").textContent = prettyDate(dayKey);
+    const c = checksOf(day);
+    const finished = !!(day && day.finishedAt);
+    const lists = $("wLists");
+
+    if (!tasks.length){
+      lists.innerHTML = `<div class="empty">لا توجد مهام بعد. يضيفها المدير من صفحة المدير.</div>`;
+    } else {
+      let html = "";
+      for (const key of Object.keys(SECTIONS)){
+        const items = tasks.filter(t => (t.section || "clean") === key);
+        if (!items.length) continue;
+        const done = items.filter(t => c[t.id] && c[t.id].done).length;
+        html += `<h2 class="section-title">${SECTIONS[key]}<small>${done} / ${items.length}</small></h2><div class="list">`;
+        for (const t of items){
+          const e = c[t.id]; const isDone = !!(e && e.done);
+          const meta = isDone ? `<span class="meta">${hm(e.at)}${e.by ? " · " + esc(e.by) : ""}</span>` : "";
+          const locked = finished || !canWrite || !workerName();
+          html += `<div class="row ${isDone ? "done" : ""}">
+            <div class="txt">${esc(t.text)}${meta}</div>
+            <button class="tick" data-id="${t.id}" ${locked ? "disabled" : ""} aria-pressed="${isDone}" aria-label="${isDone ? "إلغاء" : "تم"}: ${esc(t.text)}">
+              <span class="box"></span>
+              <svg viewBox="0 0 52 40" aria-hidden="true"><path d="M6 21 L19 33 L46 6"/></svg>
+            </button></div>`;
+        }
+        html += `</div>`;
+      }
+      lists.innerHTML = html;
+    }
+
+    const total = tasks.length, done = countDone(day);
+    $("wProgText").textContent = `${done} من ${total} مهمة`;
+    $("wFill").style.width = total ? (done/total*100) + "%" : "0";
+    const fin = $("wFinished");
+    if (finished){
+      fin.textContent = `تم إنهاء الإغلاق الساعة ${hm(day.finishedAt)}${day.finishedBy ? " — " + day.finishedBy : ""}. شكراً!`;
+      fin.classList.remove("hidden");
+    } else fin.classList.add("hidden");
+    $("whoBox").classList.toggle("hidden", finished);
+    const fb = $("finishBtn");
+    fb.disabled = finished || !canWrite || !total || done < total || !workerName();
+    fb.textContent = finished ? "تم الإنهاء" : "إنهاء الإغلاق";
+  }
+
+  $("wLists").addEventListener("click", (ev) => {
+    const b = ev.target.closest(".tick"); if (!b || b.disabled) return;
+    const id = b.dataset.id;
+    const cur = checksOf(day)[id];
+    const nowDone = !(cur && cur.done);
+    const entry = nowDone ? { done:true, at:new Date().toISOString(), by:workerName() } : { done:false, at:null, by:null };
+    // optimistic
+    day = { ...(day || { date: dayKey, finishedAt:null }), checks: { ...checksOf(day), [id]: entry } };
+    renderWorker();
+    const key = dayKey;
+    queue(async () => {
+      const ref = db.doc("days/" + key);
+      const snap = await ref.get();
+      if (!snap.exists) await ref.set({ date:key, checks:{ [id]: entry }, finishedAt:null, finishedBy:null });
+      else await ref.update({ checks:{ [id]: entry } });
+    });
+  });
+
+  $("finishBtn").addEventListener("click", () => {
+    if (!confirm("تأكيد إنهاء الإغلاق وتسجيل الوقت الآن؟")) return;
+    const at = new Date().toISOString(), by = workerName(), key = dayKey;
+    day = { ...day, finishedAt: at, finishedBy: by };
+    renderWorker();
+    queue(() => db.doc("days/" + key).update({ finishedAt: at, finishedBy: by }));
+  });
+
+  /* ---------- ADMIN ---------- */
+  function setMode(m){
+    mode = m;
+    $("btnWorker").setAttribute("aria-pressed", m === "worker");
+    $("btnAdmin").setAttribute("aria-pressed", m === "admin");
+    $("workerView").classList.toggle("hidden", m !== "worker");
+    $("wBar").classList.toggle("hidden", m !== "worker");
+    $("adminView").classList.toggle("hidden", m !== "admin");
+    if (m === "admin") renderAdmin();
+  }
+  $("btnWorker").onclick = () => setMode("worker");
+  $("btnAdmin").onclick = () => { if (unlocked) { startAdmin(); setMode("admin"); } else openPin(); };
+
+  /* ---------- PIN ---------- */
+  async function hashPin(pin, salt){
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(salt + ":" + pin));
+    return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,"0")).join("");
+  }
+  function openPin(){
+    $("pinErr").textContent = ""; $("pinInput").value = "";
+    if (!db){ showStatus("صفحة المدير تحتاج اتصالاً بالبيانات. افتح الصفحة وأنت مسجّل الدخول."); return; }
+    $("pinHint").textContent = pinCfg ? "أدخل الرقم السري" : "لم يُحدَّد رقم سري بعد. اختر رقماً من 4 إلى 8 أرقام";
+    $("pinOk").textContent = pinCfg ? "دخول" : "حفظ ودخول";
+    $("pinModal").classList.remove("hidden"); $("pinInput").focus();
+  }
+  function closePin(){ $("pinModal").classList.add("hidden"); }
+  async function submitPin(){
+    const v = $("pinInput").value.trim();
+    if (!/^[0-9]{4,8}$/.test(v)){ $("pinErr").textContent = "الرقم السري يجب أن يكون من 4 إلى 8 أرقام"; return; }
+    if (!pinCfg){
+      const salt = Math.random().toString(36).slice(2);
+      const cfg = { salt, hash: await hashPin(v, salt) };
+      try { await db.doc("config/admin").set(cfg); pinCfg = cfg; }
+      catch(e){ $("pinErr").textContent = "لم يُحفظ الرقم السري. حاول مرة أخرى."; return; }
+    } else if (await hashPin(v, pinCfg.salt) !== pinCfg.hash){
+      $("pinErr").textContent = "الرقم السري غير صحيح"; $("pinInput").select(); return;
+    }
+    unlocked = true; try { sessionStorage.setItem("tp_admin_ok","1"); } catch(e){}
+    closePin(); startAdmin(); setMode("admin");
+  }
+  $("pinOk").onclick = submitPin;
+  $("pinCancel").onclick = closePin;
+  $("pinInput").onkeydown = (e) => { if (e.key === "Enter") submitPin(); if (e.key === "Escape") closePin(); };
+  function lockAdmin(){
+    unlocked = false; try { sessionStorage.removeItem("tp_admin_ok"); } catch(e){}
+    $("btnAdmin").textContent = "🔒 المدير"; setMode("worker");
+  }
+  let adminStarted = false;
+  function startAdmin(){
+    $("btnAdmin").textContent = "المدير";
+    if (adminStarted || !db) return; adminStarted = true;
+    unsubHist = db.collection("days").orderBy("date","desc").limit(60).onSnapshot(s => {
+      history = s.docs.map(d => d.data());
+      if (selectedDay) selectedRec = history.find(h => h.date === selectedDay) || selectedRec;
+      if (mode === "admin" && tab !== "tasks" && tab !== "settings") renderAdmin();
+    }, () => {});
+  }
+
+  let tab = "today";
+  document.querySelectorAll(".tabs button").forEach(b => b.onclick = () => {
+    tab = b.dataset.tab;
+    document.querySelectorAll(".tabs button").forEach(x => x.setAttribute("aria-selected", x === b));
+    ["today","history","tasks","settings"].forEach(t => $("tab-"+t).classList.toggle("hidden", t !== tab));
+    renderAdmin();
+  });
+
+  function dayDetail(rec, key, opts = {}){
+    const total = tasks.length, done = countDone(rec);
+    const finished = rec && rec.finishedAt;
+    const workers = workersOf(rec);
+    const c = checksOf(rec);
+    let html = `<div class="stats">
+      <div class="stat ${finished ? "good" : ""}"><b>${finished ? hm(rec.finishedAt) : "—"}</b><span>${finished ? "وقت إنهاء الإغلاق" : "لم ينتهِ الإغلاق بعد"}</span></div>
+      <div class="stat"><b>${done} / ${total}</b><span>مهام منجزة</span></div>
+      <div class="stat"><b>${hm(lastCheckTime(rec)) || "—"}</b><span>آخر مهمة سُجّلت</span></div>
+      <div class="stat"><b style="font-size:17px">${workers.length ? workers.map(esc).join("، ") : "—"}</b><span>العاملون</span></div>
+    </div>`;
+    if (!total) return html + `<div class="empty">لا توجد مهام. أضفها من «تعديل المهام».</div>`;
+    html += `<div class="scroll"><table class="atable"><thead><tr><th>المهمة</th><th>الحالة</th><th>الوقت</th><th>العامل</th></tr></thead><tbody>`;
+    for (const t of tasks){
+      const e = c[t.id]; const ok = e && e.done;
+      html += `<tr class="${ok ? "" : "miss"}"><td>${esc(t.text)}</td><td><span class="pill ${ok ? "ok" : "no"}">${ok ? "تم" : "لم يتم"}</span></td><td>${ok ? hm(e.at) : "—"}</td><td>${ok ? esc(e.by || "") : ""}</td></tr>`;
+    }
+    html += `</tbody></table></div>`;
+    if (finished && opts.reopen) html += `<div style="margin-top:14px"><button class="btn ghost small" id="reopenBtn">إعادة فتح القائمة للعامل</button></div>`;
+    return html;
+  }
+
+  function renderAdmin(){
+    if (tab === "today"){
+      $("tab-today").innerHTML = `<p class="date" style="margin-top:0">${prettyDate(dayKey)}</p>` + dayDetail(day, dayKey, { reopen:true });
+      const rb = $("reopenBtn");
+      if (rb) rb.onclick = () => {
+        if (!confirm("سيتمكن العامل من تعديل القائمة مرة أخرى. متابعة؟")) return;
+        day = { ...day, finishedAt:null, finishedBy:null }; renderAdmin(); renderWorker();
+        queue(() => db.doc("days/" + dayKey).update({ finishedAt:null, finishedBy:null }));
+      };
+    }
+    if (tab === "history") renderHistory();
+    if (tab === "tasks") renderTasksEditor();
+    if (tab === "settings") renderSettings();
+  }
+
+  function renderSettings(){
+    const el = $("tab-settings");
+    el.innerHTML = `<div class="card"><h3>تغيير الرقم السري</h3>
+      <p class="date" style="margin:0 0 10px">رقم من 4 إلى 8 أرقام. لا تعطه للعمال.</p>
+      <div class="toolbar" style="margin:0">
+        <input id="newPin" type="password" inputmode="numeric" maxlength="8" placeholder="الجديد" aria-label="الرقم السري الجديد">
+        <input id="newPin2" type="password" inputmode="numeric" maxlength="8" placeholder="تأكيد" aria-label="تأكيد الرقم السري">
+        <button class="btn small" id="savePin">حفظ الرقم</button><span id="pinMsg"></span>
+      </div></div>
+      <div class="card"><h3>الخروج من صفحة المدير</h3>
+      <p class="date" style="margin:0 0 10px">اضغط هنا قبل ترك الجهاز للعامل، حتى لا يدخل صفحة المدير.</p>
+      <button class="btn ghost small" id="lockBtn">🔒 قفل صفحة المدير</button></div>`;
+    $("lockBtn").onclick = lockAdmin;
+    $("savePin").onclick = async () => {
+      const a = $("newPin").value.trim(), b = $("newPin2").value.trim(), m = $("pinMsg");
+      if (!/^[0-9]{4,8}$/.test(a)){ m.className = "pin-err"; m.textContent = "من 4 إلى 8 أرقام"; return; }
+      if (a !== b){ m.className = "pin-err"; m.textContent = "الرقمان غير متطابقين"; return; }
+      const salt = Math.random().toString(36).slice(2);
+      const cfg = { salt, hash: await hashPin(a, salt) };
+      queue(async () => { await db.doc("config/admin").set(cfg); pinCfg = cfg; m.className = "saved"; m.textContent = "تم حفظ الرقم السري الجديد"; $("newPin").value = $("newPin2").value = ""; });
+    };
+  }
+
+  function renderHistory(){
+    const el = $("tab-history");
+    if (selectedDay){
+      el.innerHTML = `<div class="toolbar"><button class="btn ghost small" id="backHist">رجوع للسجل</button><strong>${prettyDate(selectedDay)}</strong></div>` +
+        (selectedRec ? dayDetail(selectedRec, selectedDay) : `<div class="empty">جارٍ التحميل…</div>`);
+      $("backHist").onclick = () => { selectedDay = null; selectedRec = null; if (unsubSelected){ unsubSelected(); unsubSelected = null; } renderHistory(); };
+      return;
+    }
+    if (!history.length){ el.innerHTML = `<div class="empty">لا يوجد سجل بعد. سيظهر هنا كل يوم بعد أن يبدأ العامل بتسجيل المهام.</div>`; return; }
+    el.innerHTML = `<div class="hist">` + history.map(r => {
+      const total = tasks.length, done = countDone(r);
+      const status = r.finishedAt ? `<span class="pill ok">انتهى ${hm(r.finishedAt)}</span>` : `<span class="pill no">${done}/${total}</span>`;
+      return `<button data-key="${esc(r.date)}"><span><strong>${prettyDate(r.date)}</strong><br><span class="date">${workersOf(r).map(esc).join("، ") || "—"}</span></span>${status}</button>`;
+    }).join("") + `</div>`;
+    el.querySelectorAll("button[data-key]").forEach(b => b.onclick = () => {
+      selectedDay = b.dataset.key; selectedRec = history.find(h => h.date === selectedDay) || null;
+      renderHistory();
+    });
+  }
+
+  function newId(){ return "t" + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+  let savedTimer = null;
+  function saveTasks(list){
+    tasks = list.map(t => ({ id:t.id, text:t.text.trim(), section:t.section || "clean" })).filter(t => t.text);
+    renderWorker();
+    queue(async () => {
+      await db.doc("config/tasks").set({ items: tasks, updatedAt: new Date().toISOString() });
+      const m = $("taskSaved"); if (m){ m.textContent = "✓ تم الحفظ"; clearTimeout(savedTimer); savedTimer = setTimeout(() => { const x = $("taskSaved"); if (x) x.textContent = ""; }, 2000); }
+    });
+  }
+  function renderTasksEditor(){
+    const el = $("tab-tasks");
+    const opts = (sel) => Object.entries(SECTIONS).map(([k,v]) => `<option value="${k}" ${sel===k?"selected":""}>${v}</option>`).join("");
+    let html = `<div class="toolbar" style="justify-content:space-between"><p class="date" style="margin:0">اضغط على نص أي مهمة لتعديله. كل تغيير يُحفظ تلقائياً ويظهر للعامل فوراً.</p><span class="saved" id="taskSaved"></span></div>`;
+    html += `<div class="add" style="margin:0 0 14px"><input id="newTask" type="text" placeholder="اكتب مهمة جديدة…" aria-label="مهمة جديدة"><select id="newSec" aria-label="القسم">${opts("clean")}</select><button class="btn small" id="addTask">+ إضافة مهمة</button></div>`;
+    for (const key of Object.keys(SECTIONS)){
+      const items = tasks.map((t,i) => ({t,i})).filter(x => (x.t.section || "clean") === key);
+      html += `<h2 class="section-title">${SECTIONS[key]}<small>${items.length} مهمة</small></h2>`;
+      if (!items.length) html += `<div class="date" style="padding:6px 0 10px">لا توجد مهام في هذا القسم.</div>`;
+      items.forEach(({t,i}, n) => {
+        html += `<div class="edit-row" data-i="${i}">
+          <input type="text" value="${esc(t.text)}" data-f="text" aria-label="نص المهمة">
+          <select data-f="section" aria-label="نقل إلى قسم">${opts(t.section || "clean")}</select>
+          <button class="icon" data-act="up" aria-label="تحريك للأعلى" ${n===0?"disabled":""}>▲</button>
+          <button class="icon" data-act="down" aria-label="تحريك للأسفل" ${n===items.length-1?"disabled":""}>▼</button>
+          <button class="icon del" data-act="del" aria-label="حذف المهمة">✕</button>
+        </div>`;
+      });
+    }
+    el.innerHTML = html;
+
+    el.querySelectorAll(".edit-row").forEach(row => {
+      const i = +row.dataset.i;
+      const inp = row.querySelector('[data-f="text"]');
+      const commit = () => {
+        const v = inp.value.trim();
+        if (!v){ inp.value = tasks[i].text; return; }
+        if (v === tasks[i].text) return;
+        const list = tasks.map(t => ({...t})); list[i].text = v; saveTasks(list);
+      };
+      inp.onblur = commit;
+      inp.onkeydown = (e) => { if (e.key === "Enter") inp.blur(); if (e.key === "Escape"){ inp.value = tasks[i].text; inp.blur(); } };
+      row.querySelector('[data-f="section"]').onchange = (e) => {
+        const list = tasks.map(t => ({...t})); list[i].section = e.target.value; saveTasks(list); renderTasksEditor();
+      };
+      row.querySelectorAll("[data-act]").forEach(b => b.onclick = () => {
+        const a = b.dataset.act; const list = tasks.map(t => ({...t}));
+        if (a === "del"){ if (!confirm("حذف المهمة: «" + tasks[i].text + "»؟")) return; list.splice(i,1); }
+        else {
+          // swap with the neighbour in the same section
+          const sec = list[i].section || "clean";
+          const idxs = list.map((t,k) => ((t.section||"clean") === sec ? k : -1)).filter(k => k >= 0);
+          const pos = idxs.indexOf(i), j = idxs[a === "up" ? pos-1 : pos+1];
+          if (j === undefined) return;
+          [list[i], list[j]] = [list[j], list[i]];
+        }
+        saveTasks(list); renderTasksEditor();
+      });
+    });
+    const add = () => {
+      const v = $("newTask").value.trim(); if (!v){ $("newTask").focus(); return; }
+      const sec = $("newSec").value;
+      saveTasks([...tasks, { id:newId(), text:v, section:sec }]);
+      renderTasksEditor(); $("newSec").value = sec; $("newTask").focus();
+    };
+    $("addTask").onclick = add;
+    $("newTask").onkeydown = (e) => { if (e.key === "Enter") add(); };
+  }
+
+  /* ---------- subscriptions ---------- */
+  function subscribeDay(){
+    if (unsubDay) unsubDay();
+    day = null;
+    unsubDay = db.doc("days/" + dayKey).onSnapshot(s => {
+      day = s.exists ? s.data() : null;
+      renderWorker(); if (mode === "admin" && tab !== "tasks" && tab !== "settings") renderAdmin();
+    }, () => showStatus("انقطع الاتصال بالبيانات. أعد تحميل الصفحة."));
+  }
+
+  setInterval(() => {
+    const k = businessDate();
+    if (k !== dayKey && db){ dayKey = k; subscribeDay(); renderWorker(); }
+  }, 60000);
+
+  async function init(){
+    renderWorker();
+    db = await claude.use("db");
+    user = await claude.use("user");
+    if (!db){
+      canWrite = false; renderWorker();
+      showStatus("افتح هذه الصفحة وأنت مسجّل الدخول إلى Claude حتى يتم حفظ المهام.");
+      return;
+    }
+    if (user){
+      const w = await user.can("data.write");
+      if (w === false) canWrite = false;
+      isAdmin = await user.canEdit();
+    }
+    if (!canWrite) showStatus("يمكنك المشاهدة فقط. لتسجيل المهام يجب أن يشارك المدير الصفحة معك بصلاحية مساهم (Contributor).");
+    db.doc("config/admin").onSnapshot(sn => { pinCfg = sn.exists ? sn.data() : null; }, () => {});
+    if (unlocked) startAdmin();
+    db.doc("config/tasks").onSnapshot(s => {
+      const items = s.exists ? (s.data().items || []) : [];
+      tasks = items;
+      renderWorker();
+      const typing = document.activeElement && $("tab-tasks").contains(document.activeElement) && document.activeElement.tagName === "INPUT";
+      if (mode === "admin" && !typing && tab !== "settings") renderAdmin();
+    }, () => {});
+    subscribeDay();
+    renderWorker();
+  }
+  init();
+})();
+</script>
+</body>
+</html>
